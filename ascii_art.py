@@ -4,35 +4,27 @@ import os
 import cv2
 import time
 from threading import Thread
+import threading
 from playsound import playsound
 import curses
 
+CODE_LIB = r"@B%8&WM#ahdpmZOQLCJYXzcunxrjft/\|()1[]?-_+~<>i!I;:,    "
+count = len(CODE_LIB)
 
-def transform1(image_file): 
+def transform_ascii(image_file): 
     image_file = image_file.convert("L") 
     code_pic = '' 
     for h in range(0,image_file.size[1]):
         for w in range(0,image_file.size[0]): 
             gray = image_file.getpixel((w,h))
-            code_pic = code_pic + code_lib[int(((count-1)*gray)/256)]
+            code_pic = code_pic + CODE_LIB[int(((count-1)*gray)/256)]
         code_pic = code_pic + "\n" 
     return code_pic
 
 def play_music(filename):
     playsound(filename)
 
-vflag = int(input("select type: \n1.image\t2.video\t3.play converted video:\n"))
-
-if(vflag == 1 or vflag == 2):
-    v = input("Use default dictionary(y/n):")
-    if(v == 'y'):
-        code_lib = "@B%8&WM#ahdpmZOQLCJYXzcunxrjft/\|()1[]?-_+~<>i!I;:,    "
-    else:
-        code_lib = input("select dictionary:")
-    count = len(code_lib)
-
-
-if(vflag == 1):
+def convert_image():
     fn = input("input file name : ")
     hratio = float(input("input height zoom ratio(default 1.0) : ") or "1.0")
     wratio = float(input("input width zoom ratio(default 1.0) : ") or "1.0")
@@ -41,12 +33,12 @@ if(vflag == 1):
     image_file=image_file.resize((int(image_file.size[0]*wratio), int(image_file.size[1]*hratio)))
     print(u'Size info:',image_file.size[0],' ',image_file.size[1],' ')
     tmp = open('result.txt','w')
-    transData = transform1(image_file)
-    print(transData)
-    tmp.write(transData)
+    trans_data = transform_ascii(image_file)
+    print(trans_data)
+    tmp.write(trans_data)
     tmp.close()
 
-elif(vflag == 2):
+def convert_video():
     fn = input("input file name : ")
     hratio = float(input("input height zoom ratio(default 1.0) : ") or "1.0")
     wratio = float(input("input width zoom ratio(default 1.0) : ") or "1.0")
@@ -59,16 +51,16 @@ elif(vflag == 2):
         if ret == False:
              break
         cv2.imshow('image', frame) 
-        k = cv2.waitKey(10) #q键退出 
+        k = cv2.waitKey(5)
 
         os.system('cls') 
         i += 1
         tmp = open('./out/BA('+str(i)+').txt','w') 
         frame = cv2.resize(frame, (0,0), fx=wratio, fy=hratio)
         frame = Image.fromarray(cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)) 
-        transData = transform1(frame) 
-        print(transData) 
-        tmp.write(transData) 
+        trans_data = transform_ascii(frame) 
+        print(trans_data) 
+        tmp.write(trans_data) 
         tmp.close() 
 
         if (k & 0xff == ord('q')): 
@@ -76,7 +68,7 @@ elif(vflag == 2):
     cap.release() 
     cv2.destroyAllWindows() 
 
-elif(vflag == 3):
+def play_ascii_video():
     i = 1
     v = float(input("Frame per second: \t"))
     pmusic = input("play music?(y/n)\t")
@@ -97,9 +89,23 @@ elif(vflag == 3):
                 stdscr.addstr(0,0,data)
                 stdscr.addstr("Frame: %d"%i)
                 stdscr.refresh()
-                # os.system('cls')
-                # print(data)
         except IOError:
             break
 
-os.system('pause')
+if __name__ == '__main__':
+    vflag = int(input("select type: \n1.Convert Image\t2.Convert Video\t3.Play Converted Video:\n"))
+
+    if(vflag == 1 or vflag == 2):
+        v = input("Use default dictionary(y/n):")
+        if(v == 'n'):
+            CODE_LIB = input("select dictionary:")
+            count = len(CODE_LIB)
+
+    if(vflag == 1):
+        convert_image()
+    elif(vflag == 2):
+        convert_video()
+    else:
+        play_ascii_video()
+
+    os.system('pause')
